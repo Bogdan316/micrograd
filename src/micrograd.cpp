@@ -91,8 +91,9 @@ Value::Value(const Value &other)
 
 Value &Value::operator=(const Value &other)
 {
-    _data = other._data;
-    _grad = other._grad;
+    _data = new float(*other._data);
+    _grad = new float(*other._grad);
+    _backward = other._backward;
     _l_child = other._l_child;
     _r_child = other._r_child;
     _op = other._op;

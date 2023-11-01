@@ -23,7 +23,8 @@ int main()
     Value n = x1w1x2w2 + b;
     Value o = n.tanh();
 
-    Value oo = o;
+    Value oo;
+    oo = o;
     print_graph(oo);
 
     return 0;

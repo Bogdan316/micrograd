@@ -32,6 +32,7 @@ public:
         this->_op = op;
     }
     Value(float data, std::string op = "") : Value(data, nullptr, nullptr, op){};
+    Value() : Value(0, nullptr, nullptr, ""){};
 
     ~Value()
     {
