@@ -8,21 +8,22 @@ class Value
 {
     float *_data;
     float *_grad;
-    Value *_l_child;
-    Value *_r_child;
+    const Value *_l_child;
+    const Value *_r_child;
 
     std::string _op;
-    std::function<void(Value *, Value *, Value *)> _backward = [](Value *l_child, Value *r_child, Value *out)
+    std::function<void(const Value *, const Value *, const Value *)> _backward = 
+    [](const Value *l_child, const Value *r_child, const Value *out)
     { return; };
 
-    void _to_grapviz(int &number, int parent_number = 0);
+    void _to_grapviz(int &number, int parent_number = 0) const;
 
-    static std::vector<Value *> _sorted;
-    static std::set<Value *> _visited;
-    static void _topo_sort(Value *root);
+    static std::vector<const Value *> _sorted;
+    static std::set<const Value *> _visited;
+    static void _topo_sort(const Value *root);
 
 public:
-    Value(float data, Value *l_child, Value *r_child, std::string op = "")
+    Value(float data, const Value *l_child, const Value *r_child, std::string op = "")
     {
         this->_data = new float(data);
         this->_grad = new float(0);
@@ -46,7 +47,8 @@ public:
     void backward();
     void to_grapviz();
 
-    Value operator+(Value &other);
-    Value operator*(Value &other);
+    Value& operator=(const Value& other);
+    Value operator+(const Value &other);
+    Value operator*(const Value &other);
     Value tanh();
 };

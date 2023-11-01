@@ -6,8 +6,8 @@
 
 #include "micrograd.hpp"
 
-std::vector<Value *> Value::_sorted;
-std::set<Value *> Value::_visited;
+std::vector<const Value *> Value::_sorted;
+std::set<const Value *> Value::_visited;
 
 std::ostream &operator<<(std::ostream &s, const Value &v)
 {
@@ -29,7 +29,7 @@ void Value::backward()
     _sorted.clear();
 }
 
-void Value::_topo_sort(Value *root)
+void Value::_topo_sort(const Value *root)
 {
     if (root == nullptr)
     {
@@ -45,7 +45,7 @@ void Value::_topo_sort(Value *root)
     }
 }
 
-void Value::_to_grapviz(int &number, int parent_number)
+void Value::_to_grapviz(int &number, int parent_number) const
 {
     parent_number = number;
     std::cout << "\tx" << number << " [label=<" << *this << ">];" << std::endl;
@@ -89,11 +89,21 @@ Value::Value(const Value &other)
     _op = other._op;
 }
 
-Value Value::operator+(Value &other)
+Value &Value::operator=(const Value &other)
+{
+    _data = other._data;
+    _grad = other._grad;
+    _l_child = other._l_child;
+    _r_child = other._r_child;
+    _op = other._op;
+    return *this;
+}
+
+Value Value::operator+(const Value &other)
 {
     Value out = Value(*_data + *other._data, this, &other, "+");
 
-    out._backward = [](Value *thiz, Value *other, Value *out)
+    out._backward = [](const Value *thiz, const Value *other, const Value *out)
     {
         *thiz->_grad += *out->_grad;
         *other->_grad += *out->_grad;
@@ -102,10 +112,10 @@ Value Value::operator+(Value &other)
     return out;
 }
 
-Value Value::operator*(Value &other)
+Value Value::operator*(const Value &other)
 {
     auto out = Value(*_data * *other._data, this, &other, "*");
-    out._backward = [](Value *thiz, Value *other, Value *out)
+    out._backward = [](const Value *thiz, const Value *other, const Value *out)
     {
         *thiz->_grad += *other->_data * *out->_grad;
         *other->_grad += *thiz->_data * *out->_grad;
@@ -121,7 +131,7 @@ Value Value::tanh()
     float t = (e - 1) / (e + 1);
     auto out = Value(t, this, nullptr, "tanh");
 
-    out._backward = [t](Value *thiz, Value *other, Value *out)
+    out._backward = [t](const Value *thiz, const Value *other, const Value *out)
     {
         *thiz->_grad += (1 - std::pow(t, 2)) * *out->_grad;
     };

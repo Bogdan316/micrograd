@@ -1,5 +1,11 @@
 #include "micrograd.hpp"
 
+void print_graph(Value val)
+{
+    val.backward();
+    val.to_grapviz();
+}
+
 int main()
 {
     Value x1 = 2.0;
@@ -17,8 +23,8 @@ int main()
     Value n = x1w1x2w2 + b;
     Value o = n.tanh();
 
-    o.backward();
-    o.to_grapviz();
+    Value oo = o;
+    print_graph(oo);
 
     return 0;
 }
