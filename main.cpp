@@ -1,5 +1,7 @@
 #include "src/micrograd.hpp"
 
+using namespace micrograd;
+
 void print_graph(Value val)
 {
     val.backward();
@@ -26,6 +28,16 @@ int main()
     Value oo;
     oo = o;
     print_graph(oo);
+
+    Neuron nn = 2;
+    for (auto p : nn.get_parameters())
+    {
+        std::cout << *p << std::endl;
+    }
+    std::vector<Value> v;
+    v.push_back(Value(1));
+    v.push_back(Value(1));
+    std::cout << nn(v);
 
     return 0;
 }

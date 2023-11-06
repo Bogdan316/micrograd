@@ -3,13 +3,16 @@
 #include <functional>
 #include <set>
 #include <vector>
+#include <random>
 
 #include "micrograd.hpp"
+
+using namespace micrograd;
 
 std::vector<const Value *> Value::_sorted;
 std::set<const Value *> Value::_visited;
 
-std::ostream &operator<<(std::ostream &s, const Value &v)
+std::ostream &micrograd::operator<<(std::ostream &s, const Value &v)
 {
     s << "Value(data=" << v.get_data() << ", op=" << v.get_op() << ", grad=" << v.get_grad() << ")";
     return s;
@@ -138,4 +141,55 @@ Value Value::tanh()
     };
 
     return out;
+}
+
+Value Value::relu()
+{
+    auto out = Value(*_data < 0 ? 0 : *_data, this, nullptr, "ReLU");
+
+    out._backward = [](const Value *thiz, const Value *other, const Value *out)
+    {
+        *thiz->_grad = (*out->_data > 0) * *out->_grad;
+    };
+
+    return out;
+}
+
+Neuron::Neuron(int in)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis(-1, 1);
+    for (size_t i = 0; i < in; i++)
+    {
+        _w.push_back(new Value(dis(gen)));
+    }
+    _b = new Value(0);
+}
+
+std::vector<Value *> Neuron::get_parameters()
+{
+    std::vector<Value *> vec(_w.begin(), _w.end());
+    vec.push_back(_b);
+
+    return vec;
+}
+
+Value Neuron::operator()(std::vector<Value> &x)
+{
+    Value act = *_b;
+    for (size_t i = 0; i < _w.size(); i++)
+    {
+        act = act + *_w[i] * x[i];
+    }
+    return act.relu();
+}
+
+Neuron::~Neuron()
+{
+    delete _b;
+    for (auto w : _w)
+    {
+        delete w;
+    }
 }
