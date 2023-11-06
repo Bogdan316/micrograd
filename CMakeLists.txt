@@ -1,7 +1,7 @@
 # CMake version
 cmake_minimum_required(VERSION 3.0)
 
-set(myproject "autograd")
+set(myproject "micrograd")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/build")
 # Project name
 project(${myproject})
@@ -17,9 +17,6 @@ else()
     endif()    
 endif()    
 
-# Define the executable
-add_executable(${PROJECT_NAME} 
-    src/micrograd.hpp
-    src/micrograd.cpp
-    src/main.cpp
-)      
+add_subdirectory(src)
+add_executable(${PROJECT_NAME} main.cpp)      
+target_link_libraries(${PROJECT_NAME} micrograd_lib)
