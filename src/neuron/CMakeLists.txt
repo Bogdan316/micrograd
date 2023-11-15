@@ -1,0 +1,1 @@
+add_library(neuron_lib neuron.cpp neuron.hpp)

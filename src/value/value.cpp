@@ -1,16 +1,16 @@
+
 #include <iostream>
 #include <cmath>
 #include <functional>
 #include <set>
 #include <vector>
-#include <random>
 
-#include "micrograd.hpp"
+#include "value.hpp"
 
 using namespace micrograd;
 
-std::vector<const Value *> Value::_sorted;
-std::set<const Value *> Value::_visited;
+std::vector<std::shared_ptr<Value>> Value::_sorted;
+std::set<std::shared_ptr<Value>> Value::_visited;
 
 std::ostream &micrograd::operator<<(std::ostream &s, const Value &v)
 {
@@ -21,7 +21,7 @@ std::ostream &micrograd::operator<<(std::ostream &s, const Value &v)
 void Value::backward()
 {
     *_grad = 1.0;
-    _topo_sort(this);
+    _topo_sort(std::make_shared<Value>(*this));
     for (auto i = _sorted.rbegin(); i != _sorted.rend(); i++)
     {
         auto val = *i;
@@ -32,7 +32,7 @@ void Value::backward()
     _sorted.clear();
 }
 
-void Value::_topo_sort(const Value *root)
+void Value::_topo_sort(const std::shared_ptr<Value> root)
 {
     if (root == nullptr)
     {
@@ -80,9 +80,9 @@ void Value::to_grapviz()
 
 Value::Value(const Value &other)
 {
-    _data = new float(*other._data);
+    _data = std::make_unique<float>(*other._data);
 
-    _grad = new float(*other._grad);
+    _grad = std::make_unique<float>(*other._grad);
 
     _backward = other._backward;
 
@@ -94,8 +94,8 @@ Value::Value(const Value &other)
 
 Value &Value::operator=(const Value &other)
 {
-    _data = new float(*other._data);
-    _grad = new float(*other._grad);
+    _data = std::make_unique<float>(*other._data);
+    _grad = std::make_unique<float>(*other._grad);
     _backward = other._backward;
     _l_child = other._l_child;
     _r_child = other._r_child;
@@ -105,9 +105,9 @@ Value &Value::operator=(const Value &other)
 
 Value Value::operator+(const Value &other)
 {
-    Value out = Value(*_data + *other._data, this, &other, "+");
+    Value out = Value(*_data + *other._data, std::make_shared<Value>(*this), std::make_shared<Value>(other), "+");
 
-    out._backward = [](const Value *thiz, const Value *other, const Value *out)
+    out._backward = [](const std::shared_ptr<Value> thiz, const std::shared_ptr<Value> other, const std::shared_ptr<Value> out)
     {
         *thiz->_grad += *out->_grad;
         *other->_grad += *out->_grad;
@@ -118,8 +118,8 @@ Value Value::operator+(const Value &other)
 
 Value Value::operator*(const Value &other)
 {
-    auto out = Value(*_data * *other._data, this, &other, "*");
-    out._backward = [](const Value *thiz, const Value *other, const Value *out)
+    auto out = Value(*_data * *other._data, std::make_shared<Value>(*this), std::make_shared<Value>(other), "*");
+    out._backward = [](const std::shared_ptr<Value> thiz, const std::shared_ptr<Value> other, const std::shared_ptr<Value> out)
     {
         *thiz->_grad += *other->_data * *out->_grad;
         *other->_grad += *thiz->_data * *out->_grad;
@@ -133,9 +133,9 @@ Value Value::tanh()
     float x = *_data;
     float e = std::exp(2 * x);
     float t = (e - 1) / (e + 1);
-    auto out = Value(t, this, nullptr, "tanh");
+    auto out = Value(t, std::make_shared<Value>(*this), nullptr, "tanh");
 
-    out._backward = [t](const Value *thiz, const Value *other, const Value *out)
+    out._backward = [t](const std::shared_ptr<Value> thiz, const std::shared_ptr<Value> other, const std::shared_ptr<Value> out)
     {
         *thiz->_grad += (1 - std::pow(t, 2)) * *out->_grad;
     };
@@ -145,9 +145,9 @@ Value Value::tanh()
 
 Value Value::relu()
 {
-    auto out = Value(*_data < 0 ? 0 : *_data, this, nullptr, "ReLU");
+    auto out = Value(*_data < 0 ? 0 : *_data, std::make_shared<Value>(*this), nullptr, "ReLU");
 
-    out._backward = [](const Value *thiz, const Value *other, const Value *out)
+    out._backward = [](const std::shared_ptr<Value> thiz, const std::shared_ptr<Value> other, const std::shared_ptr<Value> out)
     {
         *thiz->_grad = (*out->_data > 0) * *out->_grad;
     };
@@ -155,41 +155,3 @@ Value Value::relu()
     return out;
 }
 
-Neuron::Neuron(int in)
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis(-1, 1);
-    for (size_t i = 0; i < in; i++)
-    {
-        _w.push_back(new Value(dis(gen)));
-    }
-    _b = new Value(0);
-}
-
-std::vector<Value *> Neuron::get_parameters()
-{
-    std::vector<Value *> vec(_w.begin(), _w.end());
-    vec.push_back(_b);
-
-    return vec;
-}
-
-Value Neuron::operator()(std::vector<Value> &x)
-{
-    Value act = *_b;
-    for (size_t i = 0; i < _w.size(); i++)
-    {
-        act = act + *_w[i] * x[i];
-    }
-    return act.relu();
-}
-
-Neuron::~Neuron()
-{
-    delete _b;
-    for (auto w : _w)
-    {
-        delete w;
-    }
-}

@@ -1,0 +1,1 @@
+add_library(value_lib value.cpp value.hpp)

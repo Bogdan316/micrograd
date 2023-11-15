@@ -18,5 +18,6 @@ else()
 endif()    
 
 add_subdirectory(src)
+
 add_executable(${PROJECT_NAME} main.cpp)      
-target_link_libraries(${PROJECT_NAME} micrograd_lib)
+target_link_libraries(${PROJECT_NAME} module_lib neuron_lib value_lib)

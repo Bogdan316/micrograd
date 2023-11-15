@@ -1,1 +1,3 @@
-add_library(micrograd_lib micrograd.cpp micrograd.hpp)
+add_subdirectory(module)
+add_subdirectory(neuron)
+add_subdirectory(value)

@@ -1,4 +1,5 @@
-#include "src/micrograd.hpp"
+#include "src/neuron/neuron.hpp"
+#include "src/value/value.hpp"
 
 using namespace micrograd;
 
@@ -29,7 +30,7 @@ int main()
     oo = o;
     print_graph(oo);
 
-    Neuron nn = 2;
+    Neuron<Value> nn = Neuron<Value>(2);
     for (auto p : nn.get_parameters())
     {
         std::cout << *p << std::endl;
